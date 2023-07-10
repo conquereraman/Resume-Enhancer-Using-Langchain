@@ -9,8 +9,9 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.llms import OpenAI
+# from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
+from langchain import PromptTemplate, OpenAI, LLMChain
 with st.sidebar:
     st.title("Chat App")
     add_vertical_space(5)
@@ -120,12 +121,20 @@ def main():
             response = chain.run(input_documents=docs, question=query)
 
             st.write(response)
-            query1 = "Give area to improve upon given job description {jd} and candidate skills {response}"
-            docs = VectorStore.similarity_search(query=query, k=3)
-            chain = load_qa_chain(llm=llm, chain_type="stuff")
-            response = chain.run(input_documents=docs, question=query1)
-            st.write(response)
-            # st.write(docs)
+            prompt_template = f"""You are given skills of job description {jd} and a skills of candidate {response} compare both and give critical suggestions to the candidate"""
+            llm = OpenAI(temperature=0)
+            llm_chain = LLMChain(
+                llm=llm,
+                prompt=PromptTemplate.from_template(prompt_template)
+            )
+            input_variables = {
+                "jd": jd,
+                "response": response
+            }
+
+# Apply the input dictionary to the LLMChain
+            temp = llm_chain(input_variables)
+            st.write(temp['text'])
 
 
 if __name__ == '__main__':
